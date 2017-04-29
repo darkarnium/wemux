@@ -17,13 +17,14 @@
 # command, if enabled. This can be enabled in the configuration file.
 #
 # WEMUX HOST COMMANDS:
-# wemux start : Start the wemux server/join an existing wemux server.
-# wemux attach: Join an existing wemux server.
-# wemux stop  : Stop the wemux server.
-# wemux users : List the currently attached wemux users.
-# wemux kick  : Disconnect an SSH user, remove their wemux server.
-# wemux config: Open the wemux configuration file in your $EDITOR.
-# wemux help  : Display the help screen.
+# wemux background: Start the wemux server in the background.
+# wemux start     : Start the wemux server/join an existing wemux server.
+# wemux attach    : Join an existing wemux server.
+# wemux stop      : Stop the wemux server.
+# wemux users     : List the currently attached wemux users.
+# wemux kick      : Disconnect an SSH user, remove their wemux server.
+# wemux config    : Open the wemux configuration file in your $EDITOR.
+# wemux help      : Display the help screen.
 #
 # WEMUX CLIENT COMMANDS:
 # wemux mirror: Attach to Host in read-only mode.
@@ -377,6 +378,17 @@ display_version() {
 
 # Host mode, used when user is listed in the host_list array in /usr/local/etc/wemux.conf
 host_mode() {
+  # Start the server if it doesn't exist, in the background.
+  start_background() {
+    if ! session_exists; then
+      $wemux new-session -d -s $server
+      chmod 1777 $socket
+      echo "background wemux server started on '$server'."
+    else
+      echo "Session already running, cannot run in background."
+    fi
+  }
+
   # Start the server if it doesn't exist, otherwise reattach.
   start_server() {
     if ! session_exists; then
@@ -457,6 +469,7 @@ host_mode() {
     echo "Usage: wemux [command]"
     echo "To host a wemux server please use one of the following:"
     echo ""
+    echo "    [b]  background: Start the wemux server in the background."
     echo "    [s]       start: Start the wemux server/attach to an existing wemux server."
     echo "    [a]      attach: Attach to an existing wemux server."
     echo "    [k]        stop: Kill the wemux server '$server', delete its socket."
@@ -488,6 +501,7 @@ host_mode() {
   else
     case "$1" in
       start|s)        announce_connection "host" start_server;;
+      background|b)   announce_connection "host" start_background;;
       attach|a)       announce_connection "host" reattach;;
       stop|st)        shift; stop_server "$@";;
       kill|k)         shift; stop_server "$@";;
